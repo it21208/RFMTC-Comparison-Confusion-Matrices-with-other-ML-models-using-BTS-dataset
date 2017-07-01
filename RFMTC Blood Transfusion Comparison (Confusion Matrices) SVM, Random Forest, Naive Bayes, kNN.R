@@ -5,7 +5,7 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(caret, SDMTools, e1071, party, randomForest,
                kernlab, lattice, klaR, rpart, class, cluster, stats,
                KernelKnn, pls, gdata, nnet, glmnet, mda, MASS, C50,
-               RWeka, C50,  RWeka, adabag, mlbench, ipred, Cubist, ada)
+               RWeka, C50,  RWeka, adabag, mlbench, ipred, Cubist, ada, CORElearn)
 
 # ---------------------- Install Packages Manually If Needed -----------------------------------
 # install.packages("e1071"); install.packages("SDMTools"); install.packages("caret"); install.packages("randomForest"); 
@@ -244,10 +244,40 @@ cat("Accuracy: %s", WRFM.accuracy.test);cat("\n");
 print("-----------------------------------------------------------------------------------------------------------")
 
 # Dimensionality Reduction Algorithms
+pca <- princomp(trainset[,1:4], cor = FALSE)
+train_reduced  <- predict(pca, trainset[,1:4])
+test_reduced  <- predict(pca,testset)
+princomp_confusionMatrix_Test = confusion.matrix(RFMTC_REF_BTS_TEST[, c("Churn..0.1.")], ada.pred, threshold = 0.5)
+princomp.accuracy <- sum(diag(princomp_confusionMatrix_Test)) / sum(princomp_confusionMatrix_Test)
+print("19.Confusion Matrix for the Princomp model predictions")
+print(princomp_confusionMatrix_Test)
+cat("Accuracy: ", princomp.accuracy);cat("\n");
+print("-----------------------------------------------------------------------------------------------------------")
+
+# CORElearn - Regression Tree
+model.CoreModel <-
+   CoreModel(
+      Churn..0.1.~.,
+      data = trainset,
+      model = "regTree",
+      maxThreads = 1,
+      costMatrix = NULL
+   )
+
+CoreModel.pred = predict(model.CoreModel , newdata = testset)
+Rounded.CoreModel.pred <- round(CoreModel.pred)
+CoreModel_confusionMatrix_Test = confusion.matrix(RFMTC_REF_BTS_TEST[, c("Churn..0.1.")], Rounded.CoreModel.pred, threshold = 0.5)
+CoreModel.accuracy <- sum(diag(CoreModel_confusionMatrix_Test)) / sum(CoreModel_confusionMatrix_Test)
+print("19.Confusion Matrix for the Core model predictions")
+print(CoreModel_confusionMatrix_Test)
+cat("Accuracy: ", CoreModel.accuracy);cat("\n");
+print("-----------------------------------------------------------------------------------------------------------")
+
+# Dimensionality Reduction Algorithms
 pca <- princomp(~ ., data = trainset)
 train_reduced  <- predict(pca, trainset)
 temp_testset <- RFMTC_REF_BTS_TEST[2:6]
 test_reduced  <- predict(pca, temp_testset)
-print("17.Show the Importance of each feature (head()) for each record with the Dimensionality Reduction Algorithms model predictions")
+print("20.Show the Importance of each feature (head()) for each record with the Dimensionality Reduction Algorithms model predictions")
 print(head(test_reduced))
 cat("\n")
